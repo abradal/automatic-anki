@@ -61,12 +61,15 @@ class AnkiConnect:
 
     return self.request(payload)
   
-  def import_cards(self, fields_list):
-    for fields in fields_list:
+  def import_cards(self, pages, notion):
+    for page in pages:
+      fields = page['fields']
       res = self.add_card(fields)
 
       if res['error'] == self.ERRORS['dup']:
         self.update_card(self.get_note_id(fields['UID']), fields)
+      elif res['error']:
+        print(f'Failed to import card ({fields["Spelling"]}) - {res["error"]}')
+        continue
 
-    # 削除処理
-    # notion_uids = [fields['UID'] for fields in fields_list]
+      notion.set_checkbox_on(page['page_id'])
