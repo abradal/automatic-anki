@@ -1,0 +1,45 @@
+# Pythonが生成するキャッシュや一時ファイル
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# pipでインストールされるパッケージ
+venv/
+env/
+.venv/
+
+# Jupyter Notebookのチェックポイント
+.ipynb_checkpoints/
+
+# 環境変数や秘密情報
+.env
+.env.local
+config.json  # 設定ファイル（必要なら手動管理）
+
+# ログファイル
+logs/
+*.log
+*.out
+
+# FlaskやDjangoのマイグレーションファイル（DBの変更管理）
+*.sqlite3
+db.sqlite3
+migrations/
+instance/
+
+# Djangoのメディアや静的ファイル
+staticfiles/
+media/
+
+# Pythonパッケージ化時のビルドファイル
+dist/
+build/
+*.egg-info/
+
+# VS Code
+.vscode/
+
+# OS依存ファイル
+.DS_Store
+Thumbs.db
