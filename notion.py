@@ -1,5 +1,5 @@
 from notion_client import Client
-from generator import generate_example_and_translation
+from generator import generate
 
 class Notion:
   def __init__(self, notion_token, data_source_id):
@@ -15,12 +15,16 @@ class Notion:
     example = join_text(props['Example Sentences']['rich_text'])
     translation = join_text(props['Translation']['rich_text'])
 
-    if spelling and meanings and (not example or not translation):
-      example, translation = generate_example_and_translation(
-        openai, spelling, meanings
-      )
+    if spelling and (not meanings or not example or not translation):
+      meanings, example, translation = generate(openai, spelling, meanings)
 
       self.update_page(page_id, {
+        'Meanings': {
+          'rich_text': [{
+            'type': 'text',
+            'text': { 'content': meanings }
+          }]
+        },
         'Example Sentences': {
           'rich_text': [{
             'type': 'text',

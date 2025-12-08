@@ -1,17 +1,23 @@
 import json
 
-def generate_example_and_translation(openai, spelling: str, meanings: str):
+def clean(s: str):
+  if not isinstance(s, str): return s
+  return s.strip().strip('"').rstrip(',').strip()
+
+def generate(openai, spelling: str, meanings: str):
   prompt = f"""
   You are an English assistant.
   Word: {spelling}
-  Meaning: {meanings}
+  {f'Meanings: {meanings}' if meanings else ''}
 
   Provide:
+  {'- Concise meanings in Japanese' if not meanings else ''}
   - One simple natural English example sentence.
-  - Its Japanese translation.
+  - Japanese translation of example sentence.
   Output in the following JSON format:
 
   {{
+    {'"meanings": "...",' if not meanings else ''}
     "example": "...",
     "translation": "..."
   }}
@@ -26,9 +32,16 @@ def generate_example_and_translation(openai, spelling: str, meanings: str):
 
   try:
     data = json.loads(text)
-    return data.get('example', ''), data.get('translation', '')
+
+    # meaningsがあればそれを返し、exampleやtranslationは両方上書きする
+    return (
+      clean(meanings or data.get('meanings', '')),
+      clean(data.get('example', '')),
+      clean(data.get('translation', ''))
+    )
   except Exception:
     lines = text.split('\n')
+
     example = next((l.split(':', 1)[1].strip() for l in lines if 'example' in l.lower()), '')
     translation = next((l.split(':', 1)[1].strip() for l in lines if 'translation' in l.lower()), '')
-    return example, translation
+    return clean(meanings), clean(example), clean(translation)
