@@ -2,14 +2,16 @@ import requests
 import json
 
 class AnkiConnect:
-  ANKI_CONNECT_URL = 'http://192.168.1.6:8765'
   PEV = 'Passive English Vocab'
   ERRORS = {
-    'dup': 'cannot create note because it is a duplicate',
+    'dup': 'cannot create note because it is a duplicate'
   }
 
+  def __init__(self, url):
+    self.url = url
+
   def request(self, payload):
-    res = requests.post(self.ANKI_CONNECT_URL, json=payload)
+    res = requests.post(self.url, json=payload)
     return json.loads(res.text)
   
   def add_card(self, fields):
@@ -21,9 +23,7 @@ class AnkiConnect:
           'deckName': self.PEV,
           'modelName': f'{self.PEV}',
           'fields': { **fields, 'Parts': ', '.join(fields['Parts']) },
-          'options': {
-            'allowDuplicate': False
-          },
+          'options': { 'allowDuplicate': False },
           'tags': fields['Parts']
         }
       }
@@ -51,9 +51,7 @@ class AnkiConnect:
         'note': {
           'id': note_id,
           'fields': { **fields, 'Parts': ', '.join(fields['Parts']) },
-          'options': {
-            'allowDuplicate': False
-          },
+          'options': { 'allowDuplicate': False },
           'tags': fields['Parts']
         }
       }
@@ -72,4 +70,4 @@ class AnkiConnect:
         print(f'Failed to import card ({fields["Spelling"]}) - {res["error"]}')
         continue
 
-      notion.set_checkbox_on(page['page_id'])
+      notion.update_page(page['page_id'], { 'Anki': { 'checkbox': True }})
