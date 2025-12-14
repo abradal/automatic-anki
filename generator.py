@@ -1,8 +1,14 @@
 import json
+import re
 
 def clean(s: str):
-  if not isinstance(s, str): return s
-  return s.strip().strip('"').rstrip(',').strip()
+  if not isinstance(s, str):
+    return s
+  return s.strip().strip('"').rstrip('",').strip()
+
+def extract(key: str, text: str):
+  m = re.search(rf'"{key}"\s*:\s*"([^"]*)"', text)
+  return m.group(1) if m else ''
 
 def generate(openai, spelling: str, meanings: str):
   prompt = f"""
@@ -13,14 +19,11 @@ def generate(openai, spelling: str, meanings: str):
   Provide:
   {'- Concise meanings in Japanese' if not meanings else ''}
   - One simple natural English example sentence.
-  - Japanese translation of example sentence.
-  Output in the following JSON format:
+  - Japanese translation of the example sentence.
 
-  {{
-    {'"meanings": "...",' if not meanings else ''}
-    "example": "...",
-    "translation": "..."
-  }}
+  Return ONLY valid JSON on a single line.
+  No markdown, no comments, no trailing commas.
+  {{{'"meanings": "...",' if not meanings else ''} "example": "...", "translation": "..."}}
   """
 
   res = openai.chat.completions.create(
@@ -28,20 +31,22 @@ def generate(openai, spelling: str, meanings: str):
     messages=[{'role': 'user', 'content': prompt}],
     max_tokens=200
   )
-  text = res.choices[0].message.content
+  text = res.choices[0].message.content.strip()
 
   try:
     data = json.loads(text)
-
-    # meaningsがあればそれを返し、exampleやtranslationは両方上書きする
     return (
       clean(meanings or data.get('meanings', '')),
       clean(data.get('example', '')),
       clean(data.get('translation', ''))
-    )
+      )
   except Exception:
-    lines = text.split('\n')
-
-    example = next((l.split(':', 1)[1].strip() for l in lines if 'example' in l.lower()), '')
-    translation = next((l.split(':', 1)[1].strip() for l in lines if 'translation' in l.lower()), '')
-    return clean(meanings), clean(example), clean(translation)
+    # fallback
+    fb_meanings = extract('meanings', text)
+    example = extract('example', text)
+    translation = extract('translation', text)
+    return (
+      clean(meanings or fb_meanings),
+      clean(example),
+      clean(translation)
+    )
